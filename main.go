@@ -1,9 +1,22 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+	"time"
+)
 
 func main() {
-	fmt.Println("Hello, World!")
+	serveMux := http.NewServeMux()
 
+	s := &http.Server{
+		Addr:           ":8080",
+		Handler:        serveMux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	log.Fatal(s.ListenAndServe())
 }
