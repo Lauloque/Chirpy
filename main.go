@@ -21,8 +21,9 @@ func main() {
 		"/app/",
 		apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))),
 	)
+
 	mux.HandleFunc("/healthz", handlerReadiness)
-	mux.HandleFunc("/metrics", apiCfg.handlerRequestCounterIncrement)
+	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("/reset", apiCfg.handlerRequestCounterReset)
 
 	s := &http.Server{
@@ -51,9 +52,11 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 	})
 }
 
-func (cfg *apiConfig) handlerRequestCounterIncrement(w http.ResponseWriter, r *http.Request) {
-	text := fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())
-	w.Write([]byte(text))
+func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
+	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
 }
 
 func (cfg *apiConfig) handlerRequestCounterReset(w http.ResponseWriter, r *http.Request) {
