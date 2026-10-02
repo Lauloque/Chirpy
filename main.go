@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -9,15 +10,18 @@ import (
 
 func main() {
 	const filepathRoot = "."
-	const readinessPath = "/healthz"
 	const port = "8080"
+
+	apiCfg := apiConfig{}
 
 	mux := http.NewServeMux()
 	mux.Handle(
 		"/app/",
-		http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))),
+		apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))),
 	)
-	mux.HandleFunc(readinessPath, handlerReadiness)
+	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("/metrics", apiCfg.handlerRequestCounterIncrement)
+	mux.HandleFunc("/reset", apiCfg.handlerRequestCounterReset)
 
 	s := &http.Server{
 		Addr:    ":" + port,
@@ -28,7 +32,7 @@ func main() {
 	log.Fatal(s.ListenAndServe())
 }
 
-func handlerReadiness(w http.ResponseWriter, req *http.Request) {
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(http.StatusText(http.StatusOK)))
@@ -43,4 +47,14 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 		cfg.fileserverHits.Add(1)
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (cfg *apiConfig) handlerRequestCounterIncrement(w http.ResponseWriter, r *http.Request) {
+	text := fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())
+	w.Write([]byte(text))
+}
+
+func (cfg *apiConfig) handlerRequestCounterReset(w http.ResponseWriter, r *http.Request) {
+	cfg.fileserverHits.Store(0)
+
 }
