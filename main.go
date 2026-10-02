@@ -24,7 +24,7 @@ func main() {
 
 	mux.HandleFunc("/healthz", handlerReadiness)
 	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("/reset", apiCfg.handlerRequestCounterReset)
+	mux.HandleFunc("/reset", apiCfg.handlerReset)
 
 	s := &http.Server{
 		Addr:    ":" + port,
@@ -57,9 +57,4 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(http.StatusText(http.StatusOK)))
 	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
-}
-
-func (cfg *apiConfig) handlerRequestCounterReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-
 }
