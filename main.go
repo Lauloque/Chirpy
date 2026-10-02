@@ -10,12 +10,13 @@ func main() {
 	const filepathRoot = "."
 	const readinessPath = "/healthz"
 	const port = "8080"
+
 	mux := http.NewServeMux()
 	mux.Handle(
 		"/app/",
 		http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))),
 	)
-	mux.HandleFunc(readinessPath, readinessHandler)
+	mux.HandleFunc(readinessPath, handlerReadiness)
 
 	s := &http.Server{
 		Addr:    ":" + port,
@@ -26,9 +27,8 @@ func main() {
 	log.Fatal(s.ListenAndServe())
 }
 
-func readinessHandler(w http.ResponseWriter, req *http.Request) {
+func handlerReadiness(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-
-	w.WriteHeader(200)
-	w.Write([]byte("OK"))
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
