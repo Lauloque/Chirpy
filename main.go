@@ -12,7 +12,9 @@ func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
-	apiCfg := apiConfig{}
+	apiCfg := apiConfig{
+		fileserverHits: atomic.Int32{},
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(
