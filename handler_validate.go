@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func handleValidateChirp(w http.ResponseWriter, r *http.Request) {
@@ -12,7 +13,7 @@ func handleValidateChirp(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 	type returnVal struct {
-		Valid bool `json:"valid"`
+		Cleaned_body string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -24,10 +25,30 @@ func handleValidateChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	const maxChirpLength = 140
-	if len(params.Body) <= maxChirpLength {
-		payload := returnVal{Valid: true}
-		respondWithJSON(w, http.StatusBadRequest, payload)
-	} else {
-		respondWithError(w, http.StatusOK, "Chirp is too long")
+	if len(params.Body) > maxChirpLength {
+		respondWithError(w, http.StatusBadRequest, "Chirp is too long")
 	}
+
+	badWords := []string{
+		"kerfuffle",
+		"sharbert",
+		"fornax",
+	}
+
+	cleaned := cleanupBody(params.Body, badWords)
+
+	respondWithJSON(w, http.StatusOK, returnVal{Cleaned_body: cleaned})
+}
+
+func cleanupBody(body string, badWords []string) string {
+	words := strings.Split(body, " ")
+	for i := range words {
+		for _, badWord := range badWords {
+			if strings.ToLower(words[i]) == badWord {
+				words[i] = "****"
+				break
+			}
+		}
+	}
+	return strings.Join(words, " ")
 }
