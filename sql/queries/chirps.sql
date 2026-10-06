@@ -1,4 +1,4 @@
--- name: CreateChirp :one
+-- name: ChirpCreate :one
 INSERT INTO chirps (id, created_at, updated_at, body, user_id)
 VALUES (
     gen_random_uuid(),
@@ -9,6 +9,6 @@ VALUES (
 )
 RETURNING *;
 
--- name: GetAllChirps :many
+-- name: ChirpsList :many
 SELECT * from chirps
 ORDER BY created_at ASC;
