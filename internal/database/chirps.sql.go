@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const createChirp = `-- name: CreateChirp :one
+const chirpCreate = `-- name: ChirpCreate :one
 INSERT INTO chirps (id, created_at, updated_at, body, user_id)
 VALUES (
     gen_random_uuid(),
@@ -23,13 +23,13 @@ VALUES (
 RETURNING id, created_at, updated_at, body, user_id
 `
 
-type CreateChirpParams struct {
+type ChirpCreateParams struct {
 	Body   string
 	UserID uuid.UUID
 }
 
-func (q *Queries) CreateChirp(ctx context.Context, arg CreateChirpParams) (Chirp, error) {
-	row := q.db.QueryRowContext(ctx, createChirp, arg.Body, arg.UserID)
+func (q *Queries) ChirpCreate(ctx context.Context, arg ChirpCreateParams) (Chirp, error) {
+	row := q.db.QueryRowContext(ctx, chirpCreate, arg.Body, arg.UserID)
 	var i Chirp
 	err := row.Scan(
 		&i.ID,
@@ -41,13 +41,31 @@ func (q *Queries) CreateChirp(ctx context.Context, arg CreateChirpParams) (Chirp
 	return i, err
 }
 
-const getAllChirps = `-- name: GetAllChirps :many
+const chirpsGet = `-- name: ChirpsGet :one
+Select id, created_at, updated_at, body, user_id from chirps
+WHERE id = $1
+`
+
+func (q *Queries) ChirpsGet(ctx context.Context, id uuid.UUID) (Chirp, error) {
+	row := q.db.QueryRowContext(ctx, chirpsGet, id)
+	var i Chirp
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Body,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const chirpsList = `-- name: ChirpsList :many
 SELECT id, created_at, updated_at, body, user_id from chirps
 ORDER BY created_at ASC
 `
 
-func (q *Queries) GetAllChirps(ctx context.Context) ([]Chirp, error) {
-	rows, err := q.db.QueryContext(ctx, getAllChirps)
+func (q *Queries) ChirpsList(ctx context.Context) ([]Chirp, error) {
+	rows, err := q.db.QueryContext(ctx, chirpsList)
 	if err != nil {
 		return nil, err
 	}
