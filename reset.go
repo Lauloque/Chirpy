@@ -2,20 +2,19 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
 	if cfg.platform != "dev" {
-		respondWithError(w, http.StatusForbidden, "Reset is only allowed in dev environment.")
+		respondWithError(w, http.StatusForbidden, "Reset is only allowed in dev environment.", nil)
 		return
 	}
 
 	cfg.fileserverHits.Store(0)
 	err := cfg.db.NukeUsers(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Couldn't reset database: %v", err))
+		respondWithError(w, http.StatusInternalServerError, "Couldn't reset database: %v", err)
 		return
 	}
 
