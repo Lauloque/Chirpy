@@ -48,14 +48,14 @@ func (cfg *apiConfig) handleChirpsCreate(w http.ResponseWriter, r *http.Request)
 
 	cleaned := cleanupBody(params.Body, badWords)
 
-	chirpParams := database.CreateChirpParams{
+	chirpParams := database.ChirpCreateParams{
 		Body:   cleaned,
 		UserID: params.UserId,
 	}
 
 	// END VALIDATION
 
-	chirp, err := cfg.db.CreateChirp(r.Context(), chirpParams)
+	chirp, err := cfg.db.ChirpCreate(r.Context(), chirpParams)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create chirp: %v", err)
 		return

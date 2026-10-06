@@ -8,9 +8,9 @@ import (
 )
 
 func (cfg *apiConfig) handleChirpsList(w http.ResponseWriter, r *http.Request) {
-	chirps, err := cfg.db.GetAllChirps(r.Context())
+	chirps, err := cfg.db.ChirpsList(r.Context())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't retrieve chirps: %v", err)
+		respondWithError(w, http.StatusInternalServerError, "Couldn't list chirps: %v", err)
 		return
 	}
 
