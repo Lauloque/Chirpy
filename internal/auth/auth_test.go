@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -128,6 +129,92 @@ func TestJWT(t *testing.T) {
 				if newID != tt.userID {
 					t.Errorf("ValidateJWT() generated uuid %v, expected %v", newID, tt.userID)
 				}
+			}
+		})
+	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		inputToken    string
+		expectedToken string
+		genHeader     bool
+		wantErr       bool
+	}{
+		{
+			name:          "Matching tokens, no error wanted",
+			inputToken:    "Bearer Donut",
+			expectedToken: "Donut",
+			genHeader:     true,
+			wantErr:       false,
+		},
+		{
+			name:          "Token with space, no error wanted",
+			inputToken:    "Bearer Sunflower 6",
+			expectedToken: "Sunflower 6",
+			genHeader:     true,
+			wantErr:       false,
+		},
+		{
+			name:          "No header gen, error wanted",
+			inputToken:    "owo",
+			expectedToken: "",
+			genHeader:     false,
+			wantErr:       true,
+		},
+		{
+			name:          "No Bearer token",
+			inputToken:    "owo",
+			expectedToken: "",
+			genHeader:     true,
+			wantErr:       true,
+		},
+		{
+			name:          "No space separator",
+			inputToken:    "BearerOwo",
+			expectedToken: "",
+			genHeader:     true,
+			wantErr:       true,
+		},
+		{
+			name:          "Empty token",
+			inputToken:    "",
+			expectedToken: "",
+			genHeader:     true,
+			wantErr:       true,
+		},
+		{
+			name:          "Only spaces token",
+			inputToken:    "    ",
+			expectedToken: "",
+			genHeader:     true,
+			wantErr:       true,
+		},
+		{
+			name:          "Trailing spaces separator",
+			inputToken:    "Bearer Owo ",
+			expectedToken: "Owo",
+			genHeader:     true,
+			wantErr:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := http.Header{}
+			if tt.genHeader {
+				h.Set("Authorization", tt.inputToken)
+			}
+
+			token, err := GetBearerToken(h)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBearerToken() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if token != tt.expectedToken {
+				t.Errorf("GetBearerToken() expected token %v, got %v", tt.expectedToken, token)
 			}
 		})
 	}
