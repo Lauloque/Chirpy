@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Lauloque/Chirpy/internal/auth"
 	"github.com/Lauloque/Chirpy/internal/database"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -22,8 +23,7 @@ type Chirp struct {
 
 func (cfg *apiConfig) handleChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	params := parameters{}
@@ -33,11 +33,26 @@ func (cfg *apiConfig) handleChirpsCreate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// VALIDATION
+	// USER VALIDATION
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find JWT", err)
+		return
+	}
+
+	authUserId, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT:", err)
+		return
+	}
+	// END USER VALIDATION
+
+	// Chirp VALIDATION
 
 	const maxChirpLength = 140
 	if len(params.Body) > maxChirpLength {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
+		return
 	}
 
 	badWords := []string{
@@ -50,7 +65,7 @@ func (cfg *apiConfig) handleChirpsCreate(w http.ResponseWriter, r *http.Request)
 
 	chirpParams := database.ChirpCreateParams{
 		Body:   cleaned,
-		UserID: params.UserId,
+		UserID: authUserId,
 	}
 
 	// END VALIDATION
