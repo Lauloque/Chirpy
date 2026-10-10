@@ -7,18 +7,19 @@ import (
 	"time"
 
 	"github.com/Lauloque/Chirpy/internal/auth"
+	"github.com/Lauloque/Chirpy/internal/database"
 	_ "github.com/lib/pq"
 )
 
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Password         string `json:"password"`
-		Email            string `json:"email"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	params := parameters{}
@@ -44,14 +45,22 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expirationTime := time.Hour
-	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < 3600 {
-		expirationTime = time.Duration(params.ExpiresInSeconds) * time.Second
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.secret, expirationTime)
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT:", err)
+		return
+	}
+
+	rereshTokenString := auth.MakeRefreshToken()
+	rtParams := database.CreateRefreshTokenParams{
+		Token:     rereshTokenString,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60),
+	}
+
+	refreshToken, err := cfg.db.CreateRefreshToken(r.Context(), rtParams)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh token:", err)
 		return
 	}
 
@@ -63,6 +72,7 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Email:     user.Email,
 			Token:     token,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refreshToken.Token,
 	})
 }
