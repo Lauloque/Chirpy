@@ -16,3 +16,7 @@ ORDER BY created_at ASC;
 -- name: ChirpsGet :one
 Select * from chirps
 WHERE id = $1;
+
+-- name: ChirpDelete :exec
+DELETE FROM chirps
+WHERE id = $1;
