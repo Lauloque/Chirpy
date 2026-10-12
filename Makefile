@@ -13,6 +13,15 @@ reset:
 	sqlc generate
 	cd sql/schema && goose postgres $(DB_URL) down && goose postgres $(DB_URL) up
 
+reset-all:
+	@read -p "This resets all migrations. Continue? [y/N] " answer; \
+	case "$$answer" in \
+		y|Y|yes|YES) \
+			sqlc generate && cd sql/schema && goose postgres "$(DB_URL)" reset ;; \
+		*) \
+			echo "Cancelled." ;; \
+	esac
+
 up:
 	sqlc generate
 	cd sql/schema && goose postgres $(DB_URL) up
