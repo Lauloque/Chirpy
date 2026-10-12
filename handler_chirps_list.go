@@ -3,6 +3,7 @@ package main
 
 import (
 	"net/http"
+	"sort"
 
 	"github.com/Lauloque/Chirpy/internal/database"
 	"github.com/google/uuid"
@@ -37,6 +38,10 @@ func (cfg *apiConfig) handleChirpsList(w http.ResponseWriter, r *http.Request) {
 			Body:      chirps[i].Body,
 			UserId:    chirps[i].UserID,
 		})
+	}
+
+	if r.URL.Query().Get("sort") == "desc" {
+		sort.Slice(chirpsArray, func(i, j int) bool { return chirpsArray[i].CreatedAt.After(chirpsArray[j].CreatedAt) })
 	}
 
 	respondWithJSON(w, http.StatusOK, chirpsArray)
