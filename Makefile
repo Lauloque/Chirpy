@@ -21,4 +21,4 @@ down:
 	cd sql/schema && goose postgres $(DB_URL) down
 
 build:
-	go build -o bin/gator
+	go build -o Chirpy
